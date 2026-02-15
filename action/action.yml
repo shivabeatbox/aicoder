@@ -1,0 +1,39 @@
+name: 'Sprint Code AI Agent'
+description: 'Jira Ticket To Code In A Click — supports Claude, OpenAI, and Gemini'
+author: 'Sprint Code'
+
+inputs:
+  ticket_key:
+    description: 'Jira ticket key (e.g., PROJ-123)'
+    required: true
+  ticket_title:
+    description: 'Ticket title/summary'
+    required: true
+  ticket_description:
+    description: 'Full ticket description'
+    required: true
+  provider:
+    description: 'AI provider: claude, openai, or gemini'
+    required: false
+    default: 'claude'
+  api_key:
+    description: 'API key for the chosen provider (Anthropic / OpenAI / Google)'
+    required: true
+  model:
+    description: 'Model name (leave empty for provider default: claude-sonnet-4-5, gpt-4o, gemini-2.5-flash)'
+    required: false
+    default: ''
+
+outputs:
+  files_changed:
+    description: 'Comma-separated list of files created or modified'
+  summary:
+    description: 'Summary of changes made by the agent'
+
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
+
+branding:
+  icon: 'cpu'
+  color: 'orange'
