@@ -1,0 +1,2 @@
+// Gradle settings file for the project
+rootProject.name = 'aicoder'
