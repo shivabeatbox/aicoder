@@ -1,3 +1,13 @@
+# Sprint AI - GitHub Actions Workflow
+# Copy this file to your repository at: .github/workflows/sprint-ai.yml
+#
+# Required GitHub Secrets:
+#   ANTHROPIC_API_KEY - Your Anthropic API key (https://console.anthropic.com)
+#
+# GITHUB_TOKEN is automatically provided by GitHub Actions.
+#
+# This workflow is triggered by Sprint AI from Jira via workflow_dispatch.
+
 name: Sprint AI - Generate Code from Jira Issue
 
 on:
@@ -67,4 +77,4 @@ jobs:
             --max-turns 25
             --allowedTools Bash(git:*) Bash(gh:*) Bash(npm:*) Bash(npx:*) Bash(node:*) Bash(ls:*) Bash(cat:*) Bash(find:*) Bash(grep:*) Bash(head:*) Bash(tail:*) Bash(wc:*) Read Write Edit
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GIT_TOKEN }}
