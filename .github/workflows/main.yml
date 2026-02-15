@@ -1,64 +1,69 @@
-# Using a direct prompt
-- name: Run Claude Code with direct prompt
-  uses: anthropics/claude-code-base-action@beta
-  with:
-    prompt: "Your prompt here"
-    allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool"
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+name: Sprint AI - Generate Code from Jira Issue
 
-# Or using a prompt from a file
-- name: Run Claude Code with prompt file
-  uses: anthropics/claude-code-base-action@beta
-  with:
-    prompt_file: "/path/to/prompt.txt"
-    allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool"
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+on:
+  workflow_dispatch:
+    inputs:
+      issue_key:
+        description: "Jira issue key (e.g., PROJ-123)"
+        required: true
+        type: string
+      issue_title:
+        description: "Jira issue title/summary"
+        required: true
+        type: string
+      issue_description:
+        description: "Jira issue description (plain text)"
+        required: false
+        type: string
+        default: ""
+      base_branch:
+        description: "Base branch to create the feature branch from"
+        required: false
+        type: string
+        default: "main"
 
-# Or limiting the conversation turns
-- name: Run Claude Code with limited turns
-  uses: anthropics/claude-code-base-action@beta
-  with:
-    prompt: "Your prompt here"
-    allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool"
-    max_turns: "5" # Limit conversation to 5 turns
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+jobs:
+  generate-code:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
 
-# Using custom system prompts
-- name: Run Claude Code with custom system prompt
-  uses: anthropics/claude-code-base-action@beta
-  with:
-    prompt: "Build a REST API"
-    system_prompt: "You are a senior backend engineer. Focus on security, performance, and maintainability."
-    allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool"
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.base_branch }}
+          fetch-depth: 0
 
-# Or appending to the default system prompt
-- name: Run Claude Code with appended system prompt
-  uses: anthropics/claude-code-base-action@beta
-  with:
-    prompt: "Create a database schema"
-    append_system_prompt: "After writing code, be sure to code review yourself."
-    allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool"
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Generate code with Claude Code
+        uses: anthropics/claude-code-base-action@beta
+        with:
+          prompt: |
+            You are Sprint AI, an AI developer that implements code changes based on Jira issues.
 
-# Using custom environment variables
-- name: Run Claude Code with custom environment variables
-  uses: anthropics/claude-code-base-action@beta
-  with:
-    prompt: "Deploy to staging environment"
-    claude_env: |
-      ENVIRONMENT: staging
-      API_URL: https://api-staging.example.com
-      DEBUG: true
-    allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool"
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+            ## Jira Issue: ${{ inputs.issue_key }}
+            **Title:** ${{ inputs.issue_title }}
+            **Description:**
+            ${{ inputs.issue_description }}
 
-# Using fallback model for handling API errors
-- name: Run Claude Code with fallback model
-  uses: anthropics/claude-code-base-action@beta
-  with:
-    prompt: "Review and fix TypeScript errors"
-    model: "claude-opus-4-1-20250805"
-    fallback_model: "claude-sonnet-4-20250514"
-    allowed_tools: "Bash(git:*),View,GlobTool,GrepTool,BatchTool"
-    anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+            ## Instructions
+            1. Read and understand the Jira issue above.
+            2. Explore the repository structure to understand the codebase, conventions, and tech stack.
+            3. Implement the code changes needed to resolve this issue.
+            4. Keep changes minimal and focused on the issue requirements.
+            5. Follow the project's existing code style and conventions.
+            6. Create or update only the files necessary to address the issue.
+            7. After making all changes, create a git branch named "ai/${{ inputs.issue_key }}-<short-kebab-description>" from the current branch, commit all changes with a clear commit message prefixed with "[${{ inputs.issue_key }}]", and push the branch.
+            8. Then create a pull request targeting the "${{ inputs.base_branch }}" branch with:
+               - Title: "[${{ inputs.issue_key }}] <short description>"
+               - Body that includes a summary of changes, list of files changed, and a note that it was generated by Sprint AI.
+
+            IMPORTANT: You must actually create the branch, commit, push, and open the PR using git and gh CLI commands.
+          allowed_tools: "Bash(git:*),Bash(gh:*),Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(ls:*),Bash(cat:*),Bash(find:*),Bash(grep:*),Bash(head:*),Bash(tail:*),Bash(wc:*),View,GlobTool,GrepTool,BatchTool"
+          model: "claude-sonnet-4-5-20250929"
+          max_turns: "25"
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
