@@ -95,17 +95,10 @@ jobs:
           fi
           PR_TITLE=$(gh pr list --head "ai/${{ inputs.issue_key }}" --json title --jq '.[0].title' 2>/dev/null || echo "")
           BRANCH=$(gh pr list --head "ai/${{ inputs.issue_key }}" --json headRefName --jq '.[0].headRefName' 2>/dev/null || echo "")
-          PR_NUMBER=$(gh pr list --head "ai/${{ inputs.issue_key }}" --json number --jq '.[0].number' 2>/dev/null || echo "")
-          if [ -n "$PR_NUMBER" ]; then
-            CHANGED=$(gh pr view "$PR_NUMBER" --json files --jq '.files | length' 2>/dev/null || echo "0")
-          else
-            CHANGED="0"
-          fi
 
           echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
           echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-          echo "changed=$CHANGED files changed" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GIT_TOKEN }}
 
@@ -120,8 +113,7 @@ jobs:
               --arg prUrl "${{ steps.extract.outputs.pr_url }}" \
               --arg prTitle "${{ steps.extract.outputs.pr_title }}" \
               --arg branch "${{ steps.extract.outputs.branch }}" \
-              --arg summary "${{ steps.extract.outputs.changed }}" \
-              '{issueKey: $issueKey, status: $status, prUrl: $prUrl, prTitle: $prTitle, branch: $branch, summary: $summary}'
+              '{issueKey: $issueKey, status: $status, prUrl: $prUrl, prTitle: $prTitle, branch: $branch}'
             )"
 
       - name: Notify Jira - Failure
@@ -132,6 +124,5 @@ jobs:
             -d "$(jq -n \
               --arg issueKey "${{ inputs.issue_key }}" \
               --arg status "failure" \
-              --arg summary "Workflow failed. Check GitHub Actions run #${{ github.run_number }} for details." \
-              '{issueKey: $issueKey, status: $status, prUrl: null, prTitle: null, branch: null, summary: $summary}'
+              '{issueKey: $issueKey, status: $status, prUrl: null, prTitle: null, branch: null}'
             )"
