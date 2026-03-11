@@ -16,4 +16,8 @@ class Calculator {
         if (b == 0.0) throw IllegalArgumentException("Cannot divide by zero")
         return a / b
     }
+
+    fun printHello12345(): String {
+        return "hello12345"
+    }
 }
