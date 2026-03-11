@@ -5,7 +5,6 @@
 #   ANTHROPIC_API_KEY  - Your Anthropic API key (https://console.anthropic.com)
 #   GIT_TOKEN          - GitHub PAT with repo + PR permissions
 #   FORGE_WEBHOOK_URL  - Your Forge web trigger URL (get this after `forge install`, see README)
-#   FORGE_WEBHOOK_SECRET - HMAC secret for signing webhook callbacks (get from Agile AI settings page)
 #
 # This workflow is triggered by Agile AI from Jira via workflow_dispatch.
 
@@ -106,28 +105,24 @@ jobs:
       - name: Notify Jira - Success
         if: success() && steps.extract.outputs.pr_url != ''
         run: |
-          BODY=$(jq -n \
-            --arg issueKey "${{ inputs.issue_key }}" \
-            --arg status "success" \
-            --arg prUrl "${{ steps.extract.outputs.pr_url }}" \
-            --arg prTitle "${{ steps.extract.outputs.pr_title }}" \
-            --arg branch "${{ steps.extract.outputs.branch }}" \
-            '{issueKey: $issueKey, status: $status, prUrl: $prUrl, prTitle: $prTitle, branch: $branch}')
-          SIGNATURE=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "${{ secrets.FORGE_WEBHOOK_SECRET }}" | awk '{print $2}')
           curl -s -X POST "${{ secrets.FORGE_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
-            -H "x-agile-ai-signature: sha256=$SIGNATURE" \
-            -d "$BODY"
+            -d "$(jq -n \
+              --arg issueKey "${{ inputs.issue_key }}" \
+              --arg status "success" \
+              --arg prUrl "${{ steps.extract.outputs.pr_url }}" \
+              --arg prTitle "${{ steps.extract.outputs.pr_title }}" \
+              --arg branch "${{ steps.extract.outputs.branch }}" \
+              '{issueKey: $issueKey, status: $status, prUrl: $prUrl, prTitle: $prTitle, branch: $branch}'
+            )"
 
       - name: Notify Jira - Failure
         if: failure()
         run: |
-          BODY=$(jq -n \
-            --arg issueKey "${{ inputs.issue_key }}" \
-            --arg status "failure" \
-            '{issueKey: $issueKey, status: $status, prUrl: null, prTitle: null, branch: null}')
-          SIGNATURE=$(echo -n "$BODY" | openssl dgst -sha256 -hmac "${{ secrets.FORGE_WEBHOOK_SECRET }}" | awk '{print $2}')
           curl -s -X POST "${{ secrets.FORGE_WEBHOOK_URL }}" \
             -H "Content-Type: application/json" \
-            -H "x-agile-ai-signature: sha256=$SIGNATURE" \
-            -d "$BODY"
+            -d "$(jq -n \
+              --arg issueKey "${{ inputs.issue_key }}" \
+              --arg status "failure" \
+              '{issueKey: $issueKey, status: $status, prUrl: null, prTitle: null, branch: null}'
+            )"
