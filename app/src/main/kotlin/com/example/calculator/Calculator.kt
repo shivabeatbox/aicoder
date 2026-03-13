@@ -16,4 +16,8 @@ class Calculator {
         if (b == 0.0) throw IllegalArgumentException("Cannot divide by zero")
         return a / b
     }
+
+    fun percentage(a: Double, b: Double): Double {
+        return (a / 100.0) * b
+    }
 }
